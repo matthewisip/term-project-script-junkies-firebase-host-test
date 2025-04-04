@@ -1,12 +1,19 @@
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 import joblib
 import pandas as pd
+import os
 
 app = Flask(__name__)
+CORS(app)
 
 # Load model and encoder on startup
-model = joblib.load('model/pitch_success_model.pkl')
-pitch_encoder = joblib.load('model/pitch_encoder.pkl')
+script_dir = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(script_dir, 'model', 'pitch_success_model.pkl')
+encoder_path = os.path.join(script_dir, 'model', 'pitch_encoder.pkl')
+
+model = joblib.load(model_path)
+pitch_encoder = joblib.load(encoder_path)
 
 
 def predict_next_pitch_success(balls, strikes, prev_pitches):

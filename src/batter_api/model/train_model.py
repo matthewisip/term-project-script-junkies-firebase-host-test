@@ -5,7 +5,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import LabelEncoder
 
 # Load Dataset
-data = pd.read_csv("mlb_2024_filtered_data.csv")
+data = pd.read_csv("../mlb_2024_filtered_data.csv")
 
 # Set relevant columns
 columns = ['pitch_type', 'balls', 'strikes', 'events', 'batter']

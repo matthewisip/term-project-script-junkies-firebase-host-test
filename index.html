@@ -32,7 +32,7 @@
                 <input type="text" id="pitch-result" placeholder="Enter result (e.g., Strike, Ball, Hit, Out, Foul)">
             </div>
 
-            <button id="pitch-button">Pitch</button>
+            <button onclick="getPrediction()" id="pitch-button">Pitch</button>
             <button id="undo-button">Undo Last Pitch</button>
         </div>
         <div class="content">
@@ -89,4 +89,30 @@
     <div id="restore-button-container"></div>
     <script src="App.js"></script>
 </body>
+
+<script>
+    async function getPrediction() {
+      const balls = 1;
+      const strikes = 2;
+      const prev_pitches = ["FB", "SL"]; // or get from inputs
+  
+      const response = await fetch('http://localhost:5000/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          balls,
+          strikes,
+          prev_pitches
+        })
+      });
+  
+      const data = await response.json();
+  
+      document.getElementById('fastball-success').textContent = data.FB !== undefined ? `${data.FB}%` : '--%';
+      document.getElementById('curveball-success').textContent = data.CB !== undefined ? `${data.CB}%` : '--%';
+      document.getElementById('changeup-success').textContent = data.CH !== undefined ? `${data.CH}%` : '--%';
+      document.getElementById('slider-success').textContent = data.SL !== undefined ? `${data.SL}%` : '--%';
+    }
+  </script>
+
 </html>
