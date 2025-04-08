@@ -1,18 +1,26 @@
 <template>
   <div class="app-container">
-    <h1>Welcome!</h1>
-    <AuthScreen />
+    <AuthScreen v-if="!isAuthenticated" @authenticated="isAuthenticated = true" />
+    <MainScreen v-else />
   </div>
 </template>
 
 <script>
-import AuthScreen from "./components/AuthScreen.vue";
+import AuthScreen from './components/AuthScreen.vue'
+import MainScreen from './components/MainScreen.vue'
+
 
 export default {
   components: {
-    AuthScreen
+    AuthScreen,
+    MainScreen
+  },
+  data() {
+    return {
+      isAuthenticated: false
+    }
   }
-};
+}
 </script>
 
 <style scoped>

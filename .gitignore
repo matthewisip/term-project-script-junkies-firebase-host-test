@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pkl
+*.sqlite3
+env/
+venv/
+ENV/
+.venv/
+instance/
+.webassets-cache
+
+# Flask specific
+*.log
+*.env
+*.env.*
+
+# Jupyter / IPython
+.ipynb_checkpoints
+
+# VS Code / IDEs
+.vscode/
+.idea/
+
+# Node/Vue
+node_modules/
+dist/
+*.local
+*.DS_Store
+
+# Log files
+*.log
+
+# npm / yarn
+package-lock.json
+yarn.lock
+
+# OS generated
+.DS_Store
+Thumbs.db

@@ -12,32 +12,28 @@
     </div>
   </template>
   
-  <script>
-  import { ref } from "vue";
-  import { auth } from "../firebase/firebase";
-  import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+  <script setup>
+  import { ref } from 'vue';
+  import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+  import { auth } from '../firebase/firebase';
   
-  export default {
-    setup() {
-      const email = ref("");
-      const password = ref("");
-      const isLogin = ref(true);
+  const emit = defineEmits(['authenticated']);
   
-      const handleAuth = async () => {
-        try {
-          if (isLogin.value) {
-            await signInWithEmailAndPassword(auth, email.value, password.value);
-            alert("Logged in!"); // TO DO: REPLACE WITH NAV TO MAIN SCREEN
-          } else {
-            await createUserWithEmailAndPassword(auth, email.value, password.value);
-            alert("Account created!");
-          }
-        } catch (error) {
-          alert(error.message);
-        }
-      };
+  const email = ref('');
+  const password = ref('');
+  const isLogin = ref(true);
   
-      return { email, password, isLogin, handleAuth };
+  const handleAuth = async () => {
+    try {
+      if (isLogin.value) {
+        await signInWithEmailAndPassword(auth, email.value, password.value);
+        emit('authenticated');
+      } else {
+        await createUserWithEmailAndPassword(auth, email.value, password.value);
+        alert("Account created!");
+      }
+    } catch (error) {
+      alert(error.message);
     }
   };
   </script>
