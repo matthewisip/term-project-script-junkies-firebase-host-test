@@ -7,10 +7,10 @@ import os
 app = Flask(__name__)
 CORS(app)
 
-# Load model and encoder on startup
 script_dir = os.path.dirname(os.path.abspath(__file__))
-model_path = os.path.join(script_dir, 'model', 'pitch_success_model.pkl')
-encoder_path = os.path.join(script_dir, 'model', 'pitch_encoder.pkl')
+
+model_path = os.environ.get('MODEL_PATH', os.path.join(script_dir, 'model', 'pitch_success_model.pkl'))
+encoder_path = os.environ.get('ENCODER_PATH', os.path.join(script_dir, 'model', 'pitch_encoder.pkl'))
 
 model = joblib.load(model_path)
 pitch_encoder = joblib.load(encoder_path)
@@ -28,7 +28,6 @@ def predict_next_pitch_success(balls, strikes, prev_pitches):
                                  prev_pitches_encoded[0], prev_pitches_encoded[1]]],
                                columns=['balls', 'strikes', 'pitch_type', 'prev_pitch_1', 'prev_pitch_2'])
 
-        # Predict probability of success
         success_prob = model.predict_proba(X_input)[0][1]
         success_rates[pitch] = round(success_prob * 100, 2)
 
