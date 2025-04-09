@@ -52,6 +52,8 @@ def predict():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def predict_api(request):
+    return app(request)
 
 if __name__ == '__main__':
     app.run(debug=True)
