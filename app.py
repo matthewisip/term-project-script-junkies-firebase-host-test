@@ -34,7 +34,7 @@ def predict_next_pitch_success(balls, strikes, prev_pitches):
 
     return success_rates
 
-
+# Backend Call
 @app.route('/predict', methods=['POST'])
 def predict():
     try:

@@ -264,6 +264,33 @@ export default {
     this.isNewAtBat = true;
     this.previousScenario = '';
   },
+  async fetchPrediction(balls, strikes, sequence) {
+    try {
+      console.log("Fetching prediction for:", { balls, strikes, sequence });
+
+      const response = await fetch('https://term-project-script-junkies-firebase.onrender.com/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          balls,
+          strikes,
+          prev_pitches: sequence
+        })
+      });
+
+      const data = await response.json();
+      console.log("Prediction response:", data);
+
+      this.successRates = {
+        FB: data.FB ?? '--',
+        CB: data.CB ?? '--',
+        CH: data.CH ?? '--',
+        SL: data.SL ?? '--'
+      };
+    } catch (error) {
+      console.error("Prediction fetch failed:", error);
+    }
+  },
   storePreviousCount() {
     this.previousCount = {
       balls: this.balls,
@@ -287,8 +314,9 @@ export default {
   },
 
   mounted() {
-    this.fetchScenarios();
-  }
+  this.fetchPrediction(0, 0, []);
+  this.fetchScenarios();
+}
 }
 </script>
 
