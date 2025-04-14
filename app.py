@@ -43,8 +43,8 @@ def predict():
         strikes = data['strikes']
         prev_pitches = data['prev_pitches']
 
-        if not isinstance(prev_pitches, list) or len(prev_pitches) != 2:
-            return jsonify({'error': 'prev_pitches must be a list of exactly 2 pitch types'}), 400
+        if not isinstance(prev_pitches, list) or not all(isinstance(p, str) for p in prev_pitches):
+            return jsonify({'error': 'prev_pitches must be a list of strings'}), 400
 
         result = predict_next_pitch_success(balls, strikes, prev_pitches)
         return jsonify(result)

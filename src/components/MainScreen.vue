@@ -16,7 +16,7 @@
         <label for="pitch-result">Result of Pitch:</label>
         <input v-model="pitchResult" type="text" id="pitch-result" placeholder="Enter result (e.g., Strike, Ball, Hit, Out, Foul)" />
       </div>
-      <button @click="handlePitch">Pitch</button>
+      <button @click="handlePitchAndPredict">Pitch</button>
       <button @click="undoLastPitch">Undo Last Pitch</button>
       <button @click="resetAtBat">Reset At Bat</button>
       <button @click="addScenario">Save Current Scenario</button>
@@ -111,7 +111,6 @@ export default {
       previousScenario: '',
 
       count: '--',
-      sequence: '--',
       savedScenarios: [],
 
       balls: 0,
@@ -125,16 +124,64 @@ export default {
     toggleSidebar() {
       this.isSidebarMinimized = !this.isSidebarMinimized;
     },
-    async getPrediction() {
-      const balls = 1;
-      const strikes = 2;
-      const prev_pitches = ["FB", "SL"];
+    async handlePitchAndPredict() {
+      const resultInput = this.pitchResult.trim().toLowerCase();
+      const validResults = ['strike', 'ball', 'hit', 'out', 'foul'];
 
+      if (!validResults.includes(resultInput)) {
+        alert('Invalid result. Please enter: Strike, Ball, Hit, Out, Foul');
+        this.pitchResult = '';
+        return;
+      }
+
+      const result = resultInput.charAt(0).toUpperCase() + resultInput.slice(1);
+
+      if (this.isNewAtBat) {
+        this.resetAtBat();
+        this.isNewAtBat = false;
+      }
+
+      this.storePreviousCount();
+      this.sequence.push(this.pitchType);
+      this.updateSequenceDisplay();
+
+      // 👉 Update count logic
+      if (result.toLowerCase() === 'strike') {
+        this.strikes++;
+        if (this.strikes >= 3) {
+          this.updateCountDisplay('strikeout');
+          this.isNewAtBat = true;
+        } else {
+          this.updateCountDisplay();
+        }
+      } else if (result.toLowerCase() === 'foul') {
+        if (this.strikes < 2) {
+          this.strikes++;
+        }
+        this.updateCountDisplay();
+      } else if (result.toLowerCase() === 'ball') {
+        this.balls++;
+        if (this.balls >= 4) {
+          this.updateCountDisplay('walk');
+          this.isNewAtBat = true;
+        } else {
+          this.updateCountDisplay();
+        }
+      } else if (['hit', 'out'].includes(result.toLowerCase())) {
+        this.updateCountDisplay();
+        this.isNewAtBat = true;
+      }
+
+      this.pitchResult = '';
       try {
         const response = await fetch('https://term-project-script-junkies-firebase.onrender.com/predict', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ balls, strikes, prev_pitches }),
+          body: JSON.stringify({
+            balls: this.balls,
+            strikes: this.strikes,
+            prev_pitches: this.sequence
+          }),
         });
 
         const data = await response.json();
@@ -148,7 +195,6 @@ export default {
         alert("Failed to reach prediction API.");
       }
     },
-
 
     /*
     *    Firebase Related Functions
@@ -223,49 +269,6 @@ export default {
       balls: this.balls,
       strikes: this.strikes
     };
-  },
-  handlePitch() {
-    const resultInput = this.pitchResult.trim().toLowerCase();
-    const validResults = ['strike', 'ball', 'hit', 'out', 'foul'];
-    if (!validResults.includes(resultInput)) {
-      alert('Invalid result. Please enter: Strike, Ball, Hit, Out, Foul');
-      this.pitchResult = '';
-      return;
-    }
-    const result = resultInput.charAt(0).toUpperCase() + resultInput.slice(1);
-    if (this.isNewAtBat) {
-      this.resetAtBat();
-      this.isNewAtBat = false;
-    }
-    this.storePreviousCount();
-    this.sequence.push(this.pitchType);
-    this.updateSequenceDisplay();
-    if (result.toLowerCase() === 'strike') {
-      this.strikes++;
-      if (this.strikes >= 3) {
-        this.updateCountDisplay('strikeout');
-        this.isNewAtBat = true;
-      } else {
-        this.updateCountDisplay();
-      }
-    } else if (result.toLowerCase() === 'foul') {
-      if (this.strikes < 2) {
-        this.strikes++;
-      }
-      this.updateCountDisplay();
-    } else if (result.toLowerCase() === 'ball') {
-      this.balls++;
-      if (this.balls >= 4) {
-        this.updateCountDisplay('walk');
-        this.isNewAtBat = true;
-      } else {
-        this.updateCountDisplay();
-      }
-    } else if (['hit', 'out'].includes(result.toLowerCase())) {
-      this.updateCountDisplay();
-      this.isNewAtBat = true;
-    }
-    this.pitchResult = '';
   },
   undoLastPitch() {
     if (this.sequence.length === 0) {
