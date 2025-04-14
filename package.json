@@ -1,11 +1,18 @@
 {
-  "dependencies": {
-    "firebase": "^11.4.0"
-  },
+  "name": "term-project-script-junkies",
+  "version": "1.0.0",
+  "private": true,
+  "homepage": "https://GVSU-CIS371.github.io/term-project-script-junkies",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "deploy": "gh-pages -d dist"
+  },
+  "dependencies": {
+    "firebase": "^11.4.0",
+    "gh-pages": "^6.3.0",
+    "vue": "^3.4.0"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",
