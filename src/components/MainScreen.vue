@@ -46,19 +46,46 @@
       </div>
 
       <div class="success-rates-container">
-        <div class="success-box">
+        <div
+          class="success-box"
+          :class="{
+            highlight: highestSuccessKey === 'FB',
+            lowlight: lowestSuccessKey === 'FB'
+          }"
+        >
           <h4>Fastball Success</h4>
           <p>{{ successRates.FB }}%</p>
         </div>
-        <div class="success-box">
+
+        <div
+          class="success-box"
+          :class="{
+            highlight: highestSuccessKey === 'CB',
+            lowlight: lowestSuccessKey === 'CB'
+          }"
+        >
           <h4>Curveball Success</h4>
           <p>{{ successRates.CB }}%</p>
         </div>
-        <div class="success-box">
+
+        <div
+          class="success-box"
+          :class="{
+            highlight: highestSuccessKey === 'CH',
+            lowlight: lowestSuccessKey === 'CH'
+          }"
+        >
           <h4>Changeup Success</h4>
           <p>{{ successRates.CH }}%</p>
         </div>
-        <div class="success-box">
+
+        <div
+          class="success-box"
+          :class="{
+            highlight: highestSuccessKey === 'SL',
+            lowlight: lowestSuccessKey === 'SL'
+          }"
+        >
           <h4>Slider Success</h4>
           <p>{{ successRates.SL }}%</p>
         </div>
@@ -82,10 +109,6 @@
             <button @click="deleteScenario(scenario.id)">Delete</button>
           </div>
         </div>
-      </div>
-
-      <div id="analysis-results">
-        <!--Analysis to be displayed here -->
       </div>
     </div>
   </div>
@@ -283,7 +306,30 @@ export default {
       this.updatePrediction();
     },
   },
-
+  computed: {
+    highestSuccessKey() {
+      let maxKey = '', maxValue = -1;
+      for (const [key, value] of Object.entries(this.successRates)) {
+        const num = parseFloat(value);
+        if (!isNaN(num) && num > maxValue) {
+          maxValue = num;
+          maxKey = key;
+        }
+      }
+      return maxKey;
+    },
+    lowestSuccessKey() {
+      let minKey = '', minValue = 101;
+      for (const [key, value] of Object.entries(this.successRates)) {
+        const num = parseFloat(value);
+        if (!isNaN(num) && num < minValue) {
+          minValue = num;
+          minKey = key;
+        }
+      }
+      return minKey;
+    }
+  },
   mounted() {
     this.updatePrediction();
     this.fetchScenarios();

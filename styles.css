@@ -251,3 +251,13 @@ th {
     flex: 1 1 250px;
     box-shadow: 0 2px 5px rgba(0,0,0,0.1);
   }
+  
+  .highlight {
+    background-color: #d4edda;
+    border: 2px solid #28a745;
+  }
+
+  .lowlight {
+    background-color: #f8d7da;
+    border: 2px solid #dc3545;
+  }
