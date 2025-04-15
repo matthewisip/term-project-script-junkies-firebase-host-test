@@ -24,7 +24,10 @@
 
     <div class="content">
       <h1>Batter Success Rates</h1>
-      <div class="count">Count: {{ balls }}-{{ strikes }}</div>
+      <div class="count">
+        <span v-if="previousScenario">{{ previousScenario }}</span>
+        <span v-else>Count: {{ balls }}-{{ strikes }}</span>
+      </div>
       <div class="sequence">Sequence: {{ sequence.join(' - ') }}</div>
 
       <div class="stat-box-container">
@@ -99,25 +102,19 @@ export default {
       pitchType: 'FB',
       pitchResult: '',
       isSidebarMinimized: false,
-      successRates: {
-        FB: '--',
-        CB: '--',
-        CH: '--',
-        SL: '--',
-      },
+      successRates: { FB: '--', CB: '--', CH: '--', SL: '--' },
       battingPercentage: '--',
       sluggingPercentage: '--',
       expectedSuccess: '--',
       previousScenario: '',
-
       count: '--',
       savedScenarios: [],
-
       balls: 0,
       strikes: 0,
       sequence: [],
       previousCount: null,
       isNewAtBat: false,
+      countHistory: [],
     };
   },
   methods: {
@@ -145,34 +142,49 @@ export default {
       this.sequence.push(this.pitchType);
       this.updateSequenceDisplay();
 
-      // 👉 Update count logic
-      if (result.toLowerCase() === 'strike') {
+      if (resultInput === 'strike') {
         this.strikes++;
-        if (this.strikes >= 3) {
-          this.updateCountDisplay('strikeout');
-          this.isNewAtBat = true;
-        } else {
-          this.updateCountDisplay();
-        }
-      } else if (result.toLowerCase() === 'foul') {
-        if (this.strikes < 2) {
-          this.strikes++;
-        }
+        this.updateCountDisplay(this.strikes >= 3 ? 'strikeout' : null);
+        this.isNewAtBat = this.strikes >= 3;
+      } else if (resultInput === 'foul') {
+        if (this.strikes < 2) this.strikes++;
         this.updateCountDisplay();
-      } else if (result.toLowerCase() === 'ball') {
+      } else if (resultInput === 'ball') {
         this.balls++;
-        if (this.balls >= 4) {
-          this.updateCountDisplay('walk');
-          this.isNewAtBat = true;
-        } else {
-          this.updateCountDisplay();
-        }
-      } else if (['hit', 'out'].includes(result.toLowerCase())) {
+        this.updateCountDisplay(this.balls >= 4 ? 'walk' : null);
+        this.isNewAtBat = this.balls >= 4;
+      } else if (['hit', 'out'].includes(resultInput)) {
         this.updateCountDisplay();
         this.isNewAtBat = true;
       }
 
       this.pitchResult = '';
+      this.updatePrediction();
+    },
+
+    updateCountDisplay(result = null) {
+      if (result === 'strikeout') {
+        this.previousScenario = 'Result: K';
+      } else if (result === 'walk') {
+        this.previousScenario = 'Result: BB';
+      } else {
+        this.previousScenario = `Count: ${this.balls}-${this.strikes}`;
+      }
+    },
+
+    updateSequenceDisplay() {
+      this.sequenceDisplay = this.sequence.join(' - ');
+    },
+
+    resetAtBat() {
+      this.balls = 0;
+      this.strikes = 0;
+      this.sequence = [];
+      this.isNewAtBat = true;
+      this.previousScenario = '';
+    },
+
+    async updatePrediction() {
       try {
         const response = await fetch('https://term-project-script-junkies-firebase.onrender.com/predict', {
           method: 'POST',
@@ -180,30 +192,52 @@ export default {
           body: JSON.stringify({
             balls: this.balls,
             strikes: this.strikes,
-            prev_pitches: this.sequence
+            prev_pitches: this.sequence,
           }),
         });
 
         const data = await response.json();
-
-        this.successRates.FB = data.FB !== undefined ? data.FB : '--';
-        this.successRates.CB = data.CB !== undefined ? data.CB : '--';
-        this.successRates.CH = data.CH !== undefined ? data.CH : '--';
-        this.successRates.SL = data.SL !== undefined ? data.SL : '--';
+        this.successRates = {
+          FB: data.FB ?? '--',
+          CB: data.CB ?? '--',
+          CH: data.CH ?? '--',
+          SL: data.SL ?? '--',
+        };
+        console.log("Updated prediction:", data);
       } catch (error) {
         console.error("Prediction fetch failed:", error);
         alert("Failed to reach prediction API.");
       }
     },
 
-    /*
-    *    Firebase Related Functions
-    */
+    storePreviousCount() {
+      this.countHistory.push({ balls: this.balls, strikes: this.strikes });
+    },
 
+    undoLastPitch() {
+      if (this.sequence.length === 0 || this.countHistory.length === 0) {
+        alert('No pitch to undo!');
+        return;
+      }
+
+      this.sequence.pop();
+      const lastCount = this.countHistory.pop();
+
+      this.balls = lastCount.balls;
+      this.strikes = lastCount.strikes;
+
+      this.updateSequenceDisplay();
+      this.updateCountDisplay();
+      this.updatePrediction();
+    },
+
+    /*
+    * Firebase Functions
+    */
     async addScenario() {
       const scenario = {
-        count: '2-1',
-        sequence: 'FB-CB-FB'
+        count: `${this.balls}-${this.strikes}`,
+        sequence: this.sequence.join('-')
       };
 
       try {
@@ -213,6 +247,7 @@ export default {
         console.error('Error adding scenario:', err);
       }
     },
+
     async fetchScenarios() {
       try {
         const querySnapshot = await getDocs(collection(db, 'scenarios'));
@@ -225,16 +260,7 @@ export default {
         console.error('Error fetching scenarios:', err);
       }
     },
-    loadScenario(scenario) {
-      const [balls, strikes] = scenario.count.split('-').map(Number);
-      this.balls = balls;
-      this.strikes = strikes;
-      this.sequence = Array.isArray(scenario.sequence)
-        ? scenario.sequence
-        : scenario.sequence.split('-');
-      this.previousScenario = `Count: ${scenario.count}, Sequence: ${this.sequence.join(' - ')}`;
-      this.fetchPrediction(this.balls, this.strikes, this.sequence);
-    },
+
     async deleteScenario(id) {
       if (confirm('Are you sure you want to delete this scenario?')) {
         try {
@@ -246,82 +272,22 @@ export default {
       }
     },
 
-    updateCountDisplay(result = null) {
-    if (result === 'strikeout') {
-      this.previousScenario = 'Result: K';
-    } else if (result === 'walk') {
-      this.previousScenario = 'Result: BB';
-    } else {
-      this.previousScenario = `Count: ${this.balls}-${this.strikes}`;
-    }
-  },
-  updateSequenceDisplay() {
-    this.sequenceDisplay = this.sequence.join(' - ');
-  },
-  resetAtBat() {
-    this.balls = 0;
-    this.strikes = 0;
-    this.sequence = [];
-    this.isNewAtBat = true;
-    this.previousScenario = '';
-  },
-  async fetchPrediction(balls, strikes, sequence) {
-    try {
-      console.log("Fetching prediction for:", { balls, strikes, sequence });
-
-      const response = await fetch('https://term-project-script-junkies-firebase.onrender.com/predict', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          balls,
-          strikes,
-          prev_pitches: sequence
-        })
-      });
-
-      const data = await response.json();
-      console.log("Prediction response:", data);
-
-      this.successRates = {
-        FB: data.FB ?? '--',
-        CB: data.CB ?? '--',
-        CH: data.CH ?? '--',
-        SL: data.SL ?? '--'
-      };
-    } catch (error) {
-      console.error("Prediction fetch failed:", error);
-    }
-  },
-  storePreviousCount() {
-    this.previousCount = {
-      balls: this.balls,
-      strikes: this.strikes
-    };
-  },
-  undoLastPitch() {
-    if (this.sequence.length === 0) {
-      alert('No pitch to undo!');
-      return;
-    }
-    const removedPitch = this.sequence.pop();
-    if (this.previousCount) {
-      this.balls = this.previousCount.balls;
-      this.strikes = this.previousCount.strikes;
-      this.previousCount = null;
-    }
-    this.updateSequenceDisplay();
-    this.updateCountDisplay();
-  }
+    loadScenario(scenario) {
+      const [balls, strikes] = scenario.count.split('-').map(Number);
+      this.balls = balls;
+      this.strikes = strikes;
+      this.sequence = Array.isArray(scenario.sequence)
+        ? scenario.sequence
+        : scenario.sequence.split('-');
+      this.previousScenario = `Count: ${scenario.count}, Sequence: ${this.sequence.join(' - ')}`;
+      this.updatePrediction();
+    },
   },
 
   mounted() {
-  this.fetchPrediction(0, 0, []);
-  this.fetchScenarios();
-}
-}
+    this.updatePrediction();
+    this.fetchScenarios();
+  }
+};
 </script>
 
-
-<style scoped>
-@import './styles.css';
-</style>
