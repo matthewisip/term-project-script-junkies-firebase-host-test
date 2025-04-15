@@ -233,6 +233,7 @@ export default {
         ? scenario.sequence
         : scenario.sequence.split('-');
       this.previousScenario = `Count: ${scenario.count}, Sequence: ${this.sequence.join(' - ')}`;
+      this.fetchPrediction(this.balls, this.strikes, this.sequence);
     },
     async deleteScenario(id) {
       if (confirm('Are you sure you want to delete this scenario?')) {
