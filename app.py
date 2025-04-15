@@ -17,18 +17,25 @@ pitch_encoder = joblib.load(encoder_path)
 
 
 def predict_next_pitch_success(balls, strikes, prev_pitches):
-    prev_pitches_encoded = pitch_encoder.transform(prev_pitches)
     pitch_types = pitch_encoder.classes_
     success_rates = {}
 
     for pitch in pitch_types:
         pitch_encoded = pitch_encoder.transform([pitch])[0]
 
-        X_input = pd.DataFrame([[balls, strikes, pitch_encoded,
-                                 prev_pitches_encoded[0], prev_pitches_encoded[1]]],
+        if len(prev_pitches) >= 2:
+            prev_2 = pitch_encoder.transform([prev_pitches[-2]])[0]
+        else:
+            prev_2 = -1
+
+        if len(prev_pitches) >= 1:
+            prev_1 = pitch_encoder.transform([prev_pitches[-1]])[0]
+        else:
+            prev_1 = -1
+
+        X_input = pd.DataFrame([[balls, strikes, pitch_encoded, prev_2, prev_1]],
                                columns=['balls', 'strikes', 'pitch_type', 'prev_pitch_1', 'prev_pitch_2'])
 
-        # Predict probability of success
         success_prob = model.predict_proba(X_input)[0][1]
         success_rates[pitch] = round(success_prob * 100, 2)
 

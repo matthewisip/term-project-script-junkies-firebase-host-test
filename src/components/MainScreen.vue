@@ -205,6 +205,7 @@ export default {
       this.sequence = [];
       this.isNewAtBat = true;
       this.previousScenario = '';
+      this.updatePrediction();
     },
 
     async updatePrediction() {
